@@ -1,0 +1,6 @@
+pandas==1.3.4
+numpy
+matplotlib.pyplot
+requests
+datetime
+back_testing
