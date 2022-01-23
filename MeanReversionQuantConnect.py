@@ -31,6 +31,11 @@ class CrawlingFluorescentPinkLemur(QCAlgorithm):
         self.stocks_to_hold = [] #array of stocks to buy
         self.portfolio_change = False #triggered if a stock is to be sold or bought 
         
+        # RSI frequency strat
+        self.rsi_span = [30, 70]
+        self.rsi_freq = 1
+        # paul end
+        
         #creates a numpy matrix used in horizontal function   
         self.rolling_avg = np.zeros((self.number_of_stocks,10))  
         
@@ -89,15 +94,35 @@ class CrawlingFluorescentPinkLemur(QCAlgorithm):
                     lower_band = self.bb[l].LowerBand.Current.Value
                     #sets rsi, upper and lower band values at that point in time     
                 
-                    if (rsi_value < 30) and (price < lower_band) and (horizontal == True) and (not self.Portfolio[self.list_of_securities[l]].Invested):
+                    if (rsi_value < self.rsi_span[0]) and (price < lower_band) and (horizontal == True) and (not self.Portfolio[self.list_of_securities[l]].Invested):
                         self.stocks_to_hold.append(self.list_of_securities[l])
                         self.portfolio_change = True
                     #buying conditions     
                         
-                    if self.Portfolio[self.list_of_securities[l]].Invested and ((not horizontal) or ((rsi_value > 70) and (price > upper_band))):
+                    if self.Portfolio[self.list_of_securities[l]].Invested and ((not horizontal) or ((rsi_value > self.rsi_span[1]) and (price > upper_band))):
                         self.Liquidate(self.list_of_securities[l])
                         self.stocks_to_hold.remove(self.list_of_securities[l])
-                        self.portfolio_change = True                
+                        self.portfolio_change = True    
+
+                        # usage of rsi_feq
+                        if ((price-self.Portfolio[str(self.stocklist[l])].AveragePrice) < 0 and self.rsi_freq > -5):
+                            self.rsi_freq -= 1
+                        if ((price-self.Portfolio[str(self.stocklist[l])].AveragePrice) > 0 and self.rsi_freq < 5):
+                            self.rsi_freq += 1
+                            
+                        if (self.rsi_span[0] > 20):
+                            self.rsi_span[0] -= 2 * self.rsi_freq
+                        else:
+                            self.rsi_freq += 1
+                            self.rsi_span[0] = 30
+                        
+                        if (self.rsi_span[1] < 80):
+                            self.rsi_span[1] += 2 * self.rsi_freq
+                        else:
+                            self.rsi_freq -= 1
+                            self.rsi_span[1] = 70  
+                        # paul end
+                                  
                     #selling conditions
         
         #porfolio rebalancing                
